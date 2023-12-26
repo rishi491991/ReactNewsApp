@@ -1,0 +1,126 @@
+import React, { Component } from 'react'
+import NewsItems from './NewsItems'
+import Loading from './Loading';
+import PropTypes from 'prop-types'
+import InfiniteScroll from 'react-infinite-scroll-component'
+
+
+export class News extends Component {
+
+    static defaultProps = {
+        country: 'us',
+        category: 'general'
+    }
+
+    static propTypes = {
+        country: PropTypes.string,
+        category: PropTypes.string
+    }
+
+    constructor() {
+        super();
+        this.state = {
+            articles: [],
+            page: 1,
+            loading: "",
+            totalResults: 0
+        };
+        console.log("Constructor is called")
+
+    }
+
+    fetchMore = async ()=>{
+        this.setState({
+            page: ++this.state.page
+        })
+
+        this.setState({ loading: true })
+        const url = `https://newsapi.org/v2/top-headlines?country=${this.props.country}&category=${this.props.category}&apiKey=548b6c994ddd4911b5528b2a7e529e95&page=${this.state.page}&pageSize=12`
+        const data = await fetch(url)
+        const parsedData = await data.json();
+        this.setState({
+            articles: this.state.articles.concat(parsedData.articles),
+            totalResults: parsedData.totalResults,
+            loading: false
+        })
+
+
+    }
+
+    async updateNews() {
+        this.setState({ loading: true })
+        const url = `https://newsapi.org/v2/top-headlines?country=${this.props.country}&category=${this.props.category}&apiKey=548b6c994ddd4911b5528b2a7e529e95&page=${this.state.page}&pageSize=12`
+        const data = await fetch(url)
+        const parsedData = await data.json();
+        this.setState({
+            articles: parsedData.articles,
+            totalResults: parsedData.totalResults,
+            loading: false
+        })
+    }
+
+    async componentDidMount() {
+        this.updateNews();
+    }
+
+    // prevPage = async () => {
+    //     this.setState({
+    //         page: --this.state.page
+    //     })
+    //     console.log("This applies page " + this.state.page)
+    //     this.updateNews();
+    // }
+
+    // nextPage = async () => {
+    //     this.setState({
+    //         page: ++this.state.page
+    //     })
+    //     console.log("This applies page " + this.state.page)
+    //     this.updateNews()
+    // }
+
+    render() {
+        let notitle = "no Title"
+        let nodescription = "no description"
+        return (
+            <div className='container my-3'>
+                <h1 style={{ color: this.props.mode === 'light' ? 'black' : 'white' }}>Headlines</h1>
+                <InfiniteScroll
+                    dataLength={this.state.articles.length}
+                    next={this.fetchMore}
+                    hasMore={this.state.articles !== this.state.totalResults}
+                    loader={<Loading/>}
+                >
+                {/* {this.state.loading && <div
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        height: '75vh',
+                    }}
+                ><Loading /></div>} */}
+                <div className='container'>
+                    <div className='row'>
+
+                        {!this.state.loading && this.state.articles.map((elements) => {
+                            return <div className='col-md-4' key={elements.url}>
+                                <NewsItems title={elements.title ? elements.title.slice(0, 70) + "..." : notitle} description={elements.description ? elements.description.slice(0, 90) + '...' : nodescription} imgUrl={!elements.urlToImage ? "http://www.gravatar.com/avatar/3b3be63a4c2a439b013787725dfce802?d=identicon" : elements.urlToImage} url={elements.url} mode={this.props.mode} navbg={this.props.navbg} />
+                                <hr style={{ width: "26rem" }} />
+                            </div>
+                        })}
+                    </div>
+                </div>
+                </InfiniteScroll>
+                {/* <div className="d-flex justify-content-between">
+                    <button type="button" disabled={this.state.page <= 1} className="btn btn-dark" onClick={this.prevPage}>&larr;Previous</button>
+                    <button type="button" disabled={this.state.page + 1 > Math.ceil(this.state.totalResults / 12)} className="btn btn-dark " onClick={this.nextPage}>Next&rarr;</button>
+                </div> */}
+                <br />
+
+            </div>
+        )
+    }
+}
+
+export default News
+
